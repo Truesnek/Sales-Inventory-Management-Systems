@@ -1,31 +1,46 @@
 # Create your views here.
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
-# views.py
+from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 from .models import Customer, Product, Branch, HasInventoryOf, Supplier, Transaction, TransactionLine, CustomerPurchase, PurchaseOrder, ReceivesProductsFrom
+from sales_inventory_management import urls
 
-def home(request):
-    return render(request, 'login.html')
+# Predefined credentials
+VALID_USERS = {
+    "Manager": "Password",
+    "SalesPerson": "Password"
+}
 
 def login_view(request):
     if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
 
-        username = request.POST["username"]
-        password = request.POST["password"]
+        if username in VALID_USERS and password == VALID_USERS[username]:
+            request.session['username'] = username
+            request.session['role'] = "Manager" if username == "Manager" else "SalesPerson"
 
-        user = authenticate(request, username=username, password=password)
+            # Redirect based on role
+            if username == "Manager":
+                return redirect("manage-products")
+            else:
+                return redirect("sales-home")
+        else:
+            return render(request, "login.html", {"error": "Invalid username or password", 
+                                                  "username": username, 
+                                                  "password": ""})
+    
+    # Prefill for simulation
+    return render(request, "login.html", {"username": "Manager", "password": "Password"})
 
-        if user is not None:
-            login(request, user)  # creates session
-            return redirect("home")
-        else:f
-            return render(request, "login.html", {"error": "Invalid credentials"})
-
-    return render(request, "login.html")
-
+def manage_products(request):
+    username = request.session.get('username')
+    if not username:
+        return redirect('login')
+    return render(request, "ManageProduct.html", {"username": username})
 
 # ===================== Add Customer =====================
 @csrf_exempt
