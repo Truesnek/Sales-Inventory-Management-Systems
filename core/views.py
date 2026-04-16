@@ -8,22 +8,23 @@ import json
 from .models import Customer, Product, Branch, HasInventoryOf, Supplier, Transaction, TransactionLine, CustomerPurchase, PurchaseOrder, ReceivesProductsFrom
 from sales_inventory_management import urls
 
-def manage_inventory(request):
-    # fetch inventory data if needed
-    return render(request, 'ManageBranchInventory.html')
+# View for Branch Inventory page
+def branch_inventory_view(request):
+    return render(request, 'branch_inventory.html')
 
-def manage_suppliers(request):
-    # fetch supplier data if needed
-    return render(request, 'ManageSuppliers.html')
+# View for Manage Customers page
+def manage_customers_view(request):
+    return render(request, 'manage_customers.html')
 
-def create_purchase_order(request):
-    # fetch purchase order data if needed
-    return render(request, 'CreatePurchaseOrder.html')
+# View for Record Customer Purchase page
+def record_purchase_view(request):
+    return render(request, 'record_purchase.html')
 
-def generate_reports(request):
-    # fetch report data if needed
-    return render(request, 'GenerateReport.html')
-    
+# View for Transaction History page
+def transaction_history_view(request):
+    return render(request, 'transaction_history.html')
+
+
 # Predefined credentials
 VALID_USERS = {
     "Manager": "Password",
@@ -43,7 +44,7 @@ def login_view(request):
             if username == "Manager":
                 return redirect("manage-products")
             else:
-                return redirect("sales-home")
+                return redirect("manage_customers")
         else:
             return render(request, "login.html", {"error": "Invalid username or password", 
                                                   "username": username, 
