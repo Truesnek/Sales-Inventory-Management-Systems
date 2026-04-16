@@ -32,8 +32,8 @@ urlpatterns = [
     path('products-page/', views.manage_products, name='manage-products'),
     path('inventory-page/', views.manage_inventory, name='manage-inventory'),
     path('suppliers-page/', views.manage_suppliers, name='manage-suppliers'),
-    path('purchase-order-page/', views.create_purchase_order, name='create-purchase-order'),
-    path('reports-page/', views.generate_reports, name='generate-reports'),
+    path('purchase-order-page/', views.create_purchase_order_page, name='create-purchase-order'),
+    path('reports-page/', views.generate_report_page, name='generate-reports'),
     
     path("api/customers/add/", views.add_customer, name="add-customer"),
     path("api/customers/update/<int:customer_id>/", views.update_customer, name="update-customer"),
@@ -44,7 +44,6 @@ urlpatterns = [
     path("api/products/delete/<int:product_id>/", views.delete_product, name="delete-product"),
 
     path("api/inventory/view/", views.view_branch_inventory, name="view-branch-inventory"),
-    path("api/inventory/monitor/", views.monitor_stock_levels, name="monitor-stock-levels"),
     path("api/inventory/update/", views.update_inventory, name="update-inventory"),
 
     path("api/suppliers/add/", views.add_supplier, name="add-supplier"),
