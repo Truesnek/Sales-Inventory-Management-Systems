@@ -8,6 +8,22 @@ import json
 from .models import Customer, Product, Branch, HasInventoryOf, Supplier, Transaction, TransactionLine, CustomerPurchase, PurchaseOrder, ReceivesProductsFrom
 from sales_inventory_management import urls
 
+def manage_inventory(request):
+    # fetch inventory data if needed
+    return render(request, 'ManageBranchInventory.html')
+
+def manage_suppliers(request):
+    # fetch supplier data if needed
+    return render(request, 'ManageSuppliers.html')
+
+def create_purchase_order(request):
+    # fetch purchase order data if needed
+    return render(request, 'CreatePurchaseOrder.html')
+
+def generate_reports(request):
+    # fetch report data if needed
+    return render(request, 'GenerateReport.html')
+    
 # Predefined credentials
 VALID_USERS = {
     "Manager": "Password",

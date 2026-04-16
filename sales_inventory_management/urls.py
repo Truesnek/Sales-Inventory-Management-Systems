@@ -21,7 +21,11 @@ from core import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.login_view, name="login"),
-    path('manager/manage-products/', views.manage_products, name='manage-products'),
+    path('products-page/', views.manage_products, name='manage-products'),
+ path('inventory-page/', views.manage_inventory, name='manage-inventory'),
+    path('suppliers-page/', views.manage_suppliers, name='manage-suppliers'),
+    path('purchase-order-page/', views.create_purchase_order, name='create-purchase-order'),
+    path('reports-page/', views.generate_reports, name='generate-reports'),
     path("api/customers/add/", views.add_customer, name="add-customer"),
     path("api/customers/update/<int:customer_id>/", views.update_customer, name="update-customer"),
 
