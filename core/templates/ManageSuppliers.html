@@ -14,14 +14,103 @@
     <hr>
 
     <h2>Add Supplier</h2>
-    <!-- Add supplier form -->
+    <form id="addSupplierForm">
+        <label>Address:</label><br>
+        <input type="text" id="add_address"><br><br>
+        <label>Contact Info:</label><br>
+        <input type="text" id="add_contact_info"><br><br>
+        <button type="submit">Add Supplier</button>
+    </form>
+    <p id="addMessage"></p>
+
     <hr>
 
     <h2>Update Supplier Information</h2>
-    <!-- Update supplier form -->
+    <form id="updateSupplierForm">
+        <label>Supplier ID:</label><br>
+        <input type="number" id="update_supplier_id" required><br><br>
+        <label>Address:</label><br>
+        <input type="text" id="update_address"><br><br>
+        <label>Contact Info:</label><br>
+        <input type="text" id="update_contact_info"><br><br>
+        <button type="submit">Update Supplier</button>
+    </form>
+    <p id="updateMessage"></p>
+
     <hr>
 
     <h2>Delete Supplier</h2>
-    <!-- Delete supplier form -->
+    <form id="deleteSupplierForm">
+        <label>Supplier ID:</label><br>
+        <input type="number" id="delete_supplier_id" required><br><br>
+        <button type="submit">Delete Supplier</button>
+    </form>
+    <p id="deleteMessage"></p>
+
+    <script>
+        document.getElementById("addSupplierForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            let data = {
+                address: document.getElementById("add_address").value,
+                contact_info: document.getElementById("add_contact_info").value
+            };
+
+            fetch("/api/suppliers/add/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById("addMessage").innerText = "Supplier added successfully";
+                    document.getElementById("addSupplierForm").reset();
+                } else {
+                    document.getElementById("addMessage").innerText = "Failed to add supplier";
+                }
+            });
+        });
+
+        document.getElementById("updateSupplierForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            let supplierId = document.getElementById("update_supplier_id").value;
+            let data = {
+                address: document.getElementById("update_address").value,
+                contact_info: document.getElementById("update_contact_info").value
+            };
+            fetch("/api/suppliers/update/" + supplierId + "/", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById("updateMessage").innerText = "Supplier updated successfully";
+                    document.getElementById("updateSupplierForm").reset();
+                } else {
+                    document.getElementById("updateMessage").innerText = "Failed to update supplier";
+                }
+            });
+        });
+
+        document.getElementById("deleteSupplierForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            let supplierId = document.getElementById("delete_supplier_id").value;
+            fetch("/api/suppliers/delete/" + supplierId + "/", {
+                method: "DELETE"
+            })
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById("deleteMessage").innerText = "Supplier deleted successfully";
+                    document.getElementById("deleteSupplierForm").reset();
+                } else {
+                    document.getElementById("deleteMessage").innerText = "Failed to delete supplier";
+                }
+            });
+        });
+    </script>
 </body>
 </html>
