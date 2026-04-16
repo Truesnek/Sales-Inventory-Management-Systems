@@ -5,10 +5,10 @@
 </head>
 <body>
     <nav style="background:#333; padding:10px;">
-        <a href="branch_inventory.html" style="color:white; margin-right:15px;">View Branch Inventory</a>
-        <a href="manage_customers.html" style="color:white; margin-right:15px;">Manage Customers</a>
-        <a href="record_purchase.html" style="color:white; margin-right:15px;">Record Customer Purchase</a>
-        <a href="transaction_history.html" style="color:white; margin-right:15px;">View Transaction History</a>
+        <a href="{% url 'branch_inventory' %}" style="color:white; margin-right:15px;">View Branch Inventory</a>
+        <a href="{% url 'manage_customers' %}" style="color:white; margin-right:15px;">Manage Customers</a>
+        <a href="{% url 'record_purchase' %}" style="color:white; margin-right:15px;">Record Customer Purchase</a>
+        <a href="{% url 'transaction_history' %}" style="color:white; margin-right:15px;">View Transaction History</a>
     </nav>
     <hr>
 
