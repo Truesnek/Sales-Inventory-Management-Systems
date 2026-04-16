@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Customers</title>
+</head>
+<body>
+    <h1>Customers</h1>
+
+    {% for customer in customers %}
+        <p>{{ customer.customer_name }} - {{ customer.contact_info }}</p>
+    {% empty %}
+        <p>No customers found.</p>
+    {% endfor %}
+
+    <a href="/">Back to Home</a>
+</body>
+</html>
