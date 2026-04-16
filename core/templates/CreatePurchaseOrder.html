@@ -5,11 +5,11 @@
 </head>
 <body>
     <nav style="background:#333; padding:10px;">
-        <a href="/products-page/" style="color:white; margin-right:15px;">Manage Products</a>
-        <a href="/inventory-page/" style="color:white; margin-right:15px;">Manage Branch Inventory</a>
-        <a href="/suppliers-page/" style="color:white; margin-right:15px;">Manage Suppliers</a>
-        <a href="/purchase-order-page/" style="color:white; margin-right:15px;">Create Purchase Order</a>
-        <a href="/reports-page/" style="color:white; margin-right:15px;">Generate Report</a>
+        <a href="{% url 'manage-products' %}" style="color:white; margin-right:15px;">Manage Products</a>
+        <a href="{% url 'manage-inventory' %}" style="color:white; margin-right:15px;">Manage Branch Inventory</a>
+        <a href="{% url 'manage-suppliers' %}" style="color:white; margin-right:15px;">Manage Suppliers</a>
+        <a href="{% url 'create-purchase-order' %}" style="color:white; margin-right:15px;">Create Purchase Order</a>
+        <a href="{% url 'generate-report' %}" style="color:white; margin-right:15px;">Generate Report</a>
     </nav>
     <hr>
 
