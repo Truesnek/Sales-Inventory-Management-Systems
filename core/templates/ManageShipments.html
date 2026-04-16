@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Shipments</title>
+</head>
+<body>
+    <nav style="background:#333; padding:10px;">
+        <a href="{% url 'manage-products' %}" style="color:white;">Products</a>
+        <a href="{% url 'manage-inventory' %}" style="color:white;">Inventory</a>
+        <a href="{% url 'manage-suppliers' %}" style="color:white;">Suppliers</a>
+        <a href="{% url 'create-purchase-order' %}" style="color:white;">Orders</a>
+        <a href="{% url 'generate-report' %}" style="color:white;">Reports</a>
+    </nav>
+    <hr>
+
+    <h2>Shipments</h2>
+
+    {% if shipments %}
+    <table border="1">
+        <tr>
+            <th>ID</th><th>Supplier</th><th>Branch</th><th>Carrier</th><th>Status</th>
+        </tr>
+        {% for s in shipments %}
+        <tr>
+            <td>{{ s.shipment_id }}</td>
+            <td>{{ s.supplier.supplier_id }}</td>
+            <td>{{ s.branch.branch_id }}</td>
+            <td>{{ s.carrier.employee_number_id }}</td>
+            <td>{{ s.shipment_status }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No shipments found.</p>
+    {% endif %}
+</body>
+</html>

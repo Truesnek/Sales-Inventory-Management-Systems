@@ -1,11 +1,14 @@
 # Create your views here.
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from django.db import transaction
+
 import json
-from .models import Customer, Product, Branch, HasInventoryOf, Supplier, Transaction, TransactionLine, CustomerPurchase, PurchaseOrder, ReceivesProductsFrom
+from .models import Customer, Products, Branch, BranchInventory, Supplier, Transactions, TransactionLine, PurchaseOrder, ReceivesProductsFrom,Salesperson,Shipment
 from sales_inventory_management import urls
 
 # View for Branch Inventory page
@@ -59,156 +62,312 @@ def manage_products(request):
         return redirect('login')
     return render(request, "ManageProduct.html", {"username": username})
 
-# ===================== Add Customer =====================
-@csrf_exempt
-def add_customer(request):
-    if request.method == "POST":
-        data = json.loads(request.body)
-        customer = Customer.objects.create(
-            CustomerID=data["CustomerID"],
-            ContactInfo=data["ContactInfo"],
-            CustomerName=data["CustomerName"]
-        )
-        return JsonResponse({"status": "success", "CustomerID": customer.CustomerID})
-    return JsonResponse({"error": "POST required"}, status=400)
+def manage_inventory(request):
+    username = request.session.get("username")
+    if not username:
+        return redirect("login")
 
-# ===================== Add Product =====================
-@csrf_exempt
-def add_product(request):
-    if request.method == "POST":
-        data = json.loads(request.body)
-        product = Product.objects.create(
-            ProductID=data["ProductID"],
-            ProductName=data["ProductName"],
-            ProductDescription=data.get("ProductDescription", ""),
-            UnitPrice=data["UnitPrice"]
-        )
-        return JsonResponse({"status": "success", "ProductID": product.ProductID})
-    return JsonResponse({"error": "POST required"}, status=400)
+    inventory = BranchInventory.objects.select_related("branch", "product").all().order_by(
+        "branch__branch_id", "product__product_id"
+    )
 
-# ===================== Update Customer =====================
-@csrf_exempt
-def update_customer(request, customer_id):
-    if request.method == "PUT":
-        data = json.loads(request.body)
-        try:
-            customer = Customer.objects.get(CustomerID=customer_id)
-            customer.ContactInfo = data.get("ContactInfo", customer.ContactInfo)
-            customer.CustomerName = data.get("CustomerName", customer.CustomerName)
-            customer.save()
-            return JsonResponse({"status": "success"})
-        except Customer.DoesNotExist:
-            return JsonResponse({"error": "Customer not found"}, status=404)
-    return JsonResponse({"error": "PUT required"}, status=400)
+    return render(request, "ManageBranchInventory.html", {
+        "username": username,
+        "inventory": inventory,
+    })
 
-# ===================== Update Product =====================
-@csrf_exempt
-def update_product(request, product_id):
-    if request.method == "PUT":
-        data = json.loads(request.body)
-        try:
-            product = Product.objects.get(ProductID=product_id)
-            product.ProductName = data.get("ProductName", product.ProductName)
-            product.ProductDescription = data.get("ProductDescription", product.ProductDescription)
-            product.UnitPrice = data.get("UnitPrice", product.UnitPrice)
-            product.save()
-            return JsonResponse({"status": "success"})
-        except Product.DoesNotExist:
-            return JsonResponse({"error": "Product not found"}, status=404)
-    return JsonResponse({"error": "PUT required"}, status=400)
 
-# ===================== Delete Product =====================
-@csrf_exempt
-def delete_product(request, product_id):
-    if request.method == "DELETE":
-        try:
-            product = Product.objects.get(ProductID=product_id)
-            product.delete()
-            return JsonResponse({"status": "deleted"})
-        except Product.DoesNotExist:
-            return JsonResponse({"error": "Product not found"}, status=404)
-    return JsonResponse({"error": "DELETE required"}, status=400)
+def manage_suppliers(request):
+    username = request.session.get("username")
+    if not username:
+        return redirect("login")
 
-# ===================== View Products =====================
+    suppliers = Supplier.objects.all().order_by("supplier_id")
+
+    return render(request, "ManageSuppliers.html", {
+        "username": username,
+        "suppliers": suppliers,
+    })
+
+
+def create_purchase_order_page(request):
+    username = request.session.get("username")
+    if not username:
+        return redirect("login")
+
+    purchase_orders = PurchaseOrder.objects.select_related("employee_number").all().order_by("order_id")
+
+    return render(request, "CreatePurchaseOrder.html", {
+        "username": username,
+        "purchase_orders": purchase_orders,
+    })
+
+
+def generate_report_page(request):
+    username = request.session.get("username")
+    if not username:
+        return redirect("login")
+
+    total_products = Products.objects.count()
+    total_suppliers = Supplier.objects.count()
+    total_transactions = Transactions.objects.count()
+    total_customers = Customer.objects.count()
+    total_shipments = Shipment.objects.count()
+
+    return render(request, "GenerateReport.html", {
+        "username": username,
+        "total_products": total_products,
+        "total_suppliers": total_suppliers,
+        "total_transactions": total_transactions,
+        "total_customers": total_customers,
+        "total_shipments": total_shipments,
+    })
+
+
+def manage_customers(request):
+    username = request.session.get("username")
+    if not username:
+        return redirect("login")
+
+    customers = Customer.objects.all()
+    return render(request, "ManageCustomers.html", {"customers": customers})
+
+
+def manage_transactions(request):
+    username = request.session.get("username")
+    if not username:
+        return redirect("login")
+
+    transactions = Transactions.objects.select_related("customer", "sales").all()
+    return render(request, "ManageTransactions.html", {"transactions": transactions})
+
+
+def manage_shipments(request):
+    username = request.session.get("username")
+    if not username:
+        return redirect("login")
+
+    shipments = Shipment.objects.select_related("supplier", "branch", "carrier").all()
+    return render(request, "ManageShipments.html", {"shipments": shipments})
+
+# -------------------------
+# Product API endpoints
+# -------------------------
+
+@csrf_exempt
+@require_http_methods(["GET"])
 def view_products(request):
-    products = Product.objects.all()
-    data = [{"ProductID": p.ProductID, "ProductName": p.ProductName, "ProductDescription": p.ProductDescription, "UnitPrice": p.UnitPrice} for p in products]
+    products = Products.objects.all().order_by("product_id")
+    data = [
+        {
+            "product_id": p.product_id,
+            "product_name": p.product_name,
+            "product_description": p.product_description,
+            "unit_price": str(p.unit_price),
+            "num_products": p.num_products,
+        }
+        for p in products
+    ]
     return JsonResponse(data, safe=False)
 
-# ===================== View Branch Inventory =====================
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def add_product(request):
+    data = json.loads(request.body)
+
+    product = Products.objects.create(
+        product_name=data["product_name"],
+        product_description=data.get("product_description"),
+        unit_price=data["unit_price"],
+        num_products=data.get("num_products"),
+    )
+
+    return JsonResponse(
+        {"status": "success", "product_id": product.product_id},
+        status=201,
+    )
+
+
+@csrf_exempt
+@require_http_methods(["PUT"])
+def update_product(request, product_id):
+    data = json.loads(request.body)
+    product = get_object_or_404(Products, pk=product_id)
+
+    product.product_name = data.get("product_name", product.product_name)
+    product.product_description = data.get(
+        "product_description",
+        product.product_description,
+    )
+    product.unit_price = data.get("unit_price", product.unit_price)
+    product.num_products = data.get("num_products", product.num_products)
+    product.save()
+
+    return JsonResponse({"status": "success"})
+
+
+@csrf_exempt
+@require_http_methods(["DELETE"])
+def delete_product(request, product_id):
+    product = get_object_or_404(Products, pk=product_id)
+    product.delete()
+    return JsonResponse({"status": "deleted"})
+
+
+# -------------------------
+# Customer API endpoints
+# -------------------------
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def add_customer(request):
+    data = json.loads(request.body)
+
+    customer = Customer.objects.create(
+        customer_name=data["customer_name"],
+        contact_info=data.get("contact_info"),
+    )
+
+    return JsonResponse(
+        {"status": "success", "customer_id": customer.customer_id},
+        status=201,
+    )
+
+
+@csrf_exempt
+@require_http_methods(["PUT"])
+def update_customer(request, customer_id):
+    data = json.loads(request.body)
+    customer = get_object_or_404(Customer, pk=customer_id)
+
+    customer.customer_name = data.get("customer_name", customer.customer_name)
+    customer.contact_info = data.get("contact_info", customer.contact_info)
+    customer.save()
+
+    return JsonResponse({"status": "success"})
+
+
+# -------------------------
+# Inventory API endpoints
+# -------------------------
+
+@csrf_exempt
+@require_http_methods(["GET"])
 def view_branch_inventory(request):
-    inventory = []
-    for h in HasInventoryOf.objects.all():
-        inventory.append({
-            "BranchID": h.BranchID.BranchID,
-            "Address": h.BranchID.Address,
-            "ProductID": h.ProductID.ProductID,
-            "ProductName": h.ProductID.ProductName,
-            "NumProducts": h.NumProducts
-        })
-    return JsonResponse(inventory, safe=False)
+    inventory = (
+        BranchInventory.objects.select_related("branch", "product")
+        .all()
+        .order_by("branch__branch_id", "product__product_id")
+    )
 
-# ===================== Monitor Stock Levels =====================
-def monitor_stock_levels(request):
-    stock = []
-    for h in HasInventoryOf.objects.all():
-        stock.append({
-            "ProductID": h.ProductID.ProductID,
-            "ProductName": h.ProductID.ProductName,
-            "NumProducts": h.NumProducts
-        })
-    return JsonResponse(stock, safe=False)
+    data = [
+        {
+            "branch_id": item.branch.branch_id,
+            "address": item.branch.address,
+            "product_id": item.product.product_id,
+            "product_name": item.product.product_name,
+            "quantity": item.quantity,
+        }
+        for item in inventory
+    ]
 
-# ===================== Update Inventory Records =====================
+    return JsonResponse(data, safe=False)
+
+
 @csrf_exempt
+@require_http_methods(["PUT"])
 def update_inventory(request):
-    if request.method == "PUT":
-        data = json.loads(request.body)
-        try:
-            h = HasInventoryOf.objects.get(BranchID=data["old_branch_id"], ProductID=data["ProductID"])
-            h.BranchID = Branch.objects.get(BranchID=data["new_branch_id"])
-            h.save()
-            return JsonResponse({"status": "success"})
-        except HasInventoryOf.DoesNotExist:
-            return JsonResponse({"error": "Inventory record not found"}, status=404)
-    return JsonResponse({"error": "PUT required"}, status=400)
+    data = json.loads(request.body)
 
-# ===================== Add Supplier =====================
+    item = get_object_or_404(
+        BranchInventory,
+        branch_id=data["branch_id"],
+        product_id=data["product_id"],
+    )
+
+    item.quantity = data["quantity"]
+    item.save()
+
+    return JsonResponse({"status": "success"})
+
+
+# -------------------------
+# Supplier API endpoints
+# -------------------------
+
 @csrf_exempt
+@require_http_methods(["POST"])
 def add_supplier(request):
-    if request.method == "POST":
-        data = json.loads(request.body)
-        supplier = Supplier.objects.create(
-            SupplierID=data["SupplierID"],
-            Address=data.get("Address", ""),
-            ContactInfo=data.get("ContactInfo", "")
-        )
-        return JsonResponse({"status": "success", "SupplierID": supplier.SupplierID})
-    return JsonResponse({"error": "POST required"}, status=400)
+    data = json.loads(request.body)
 
-# ===================== Update Supplier =====================
+    supplier = Supplier.objects.create(
+        address=data.get("address"),
+        contact_info=data.get("contact_info"),
+    )
+
+    return JsonResponse(
+        {"status": "success", "supplier_id": supplier.supplier_id},
+        status=201,
+    )
+
+
 @csrf_exempt
+@require_http_methods(["PUT"])
 def update_supplier(request, supplier_id):
-    if request.method == "PUT":
-        data = json.loads(request.body)
-        try:
-            supplier = Supplier.objects.get(SupplierID=supplier_id)
-            supplier.Address = data.get("Address", supplier.Address)
-            supplier.ContactInfo = data.get("ContactInfo", supplier.ContactInfo)
-            supplier.save()
-            return JsonResponse({"status": "success"})
-        except Supplier.DoesNotExist:
-            return JsonResponse({"error": "Supplier not found"}, status=404)
-    return JsonResponse({"error": "PUT required"}, status=400)
+    data = json.loads(request.body)
+    supplier = get_object_or_404(Supplier, pk=supplier_id)
 
-# ===================== Delete Supplier =====================
+    supplier.address = data.get("address", supplier.address)
+    supplier.contact_info = data.get("contact_info", supplier.contact_info)
+    supplier.save()
+
+    return JsonResponse({"status": "success"})
+
+
 @csrf_exempt
+@require_http_methods(["DELETE"])
 def delete_supplier(request, supplier_id):
-    if request.method == "DELETE":
-        try:
-            supplier = Supplier.objects.get(SupplierID=supplier_id)
-            supplier.delete()
-            return JsonResponse({"status": "deleted"})
-        except Supplier.DoesNotExist:
-            return JsonResponse({"error": "Supplier not found"}, status=404)
-    return JsonResponse({"error": "DELETE required"}, status=400)
+    supplier = get_object_or_404(Supplier, pk=supplier_id)
+    supplier.delete()
+    return JsonResponse({"status": "deleted"})
+
+
+# -------------------------
+# Transaction API endpoints
+# -------------------------
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def add_transaction(request):
+    data = json.loads(request.body)
+
+    with transaction.atomic():
+        customer = get_object_or_404(Customer, pk=data["customer_id"])
+        salesperson = get_object_or_404(Salesperson, pk=data["salesperson_id"])
+
+        txn = Transactions.objects.create(
+            customer=customer,
+            sales=salesperson,
+            transaction_status=data.get("transaction_status"),
+            total_amount=data.get("total_amount"),
+            transaction_date=data.get("transaction_date"),
+            transaction_due_date=data.get("transaction_due_date"),
+            transaction_discount=data.get("transaction_discount"),
+        )
+
+        for line in data.get("lines", []):
+            product = get_object_or_404(Products, pk=line["product_id"])
+
+            TransactionLine.objects.create(
+                transaction=txn,
+                product=product,
+                line_number=line["line_number"],
+                quantity=line["quantity"],
+                unit_price_at_sale=line["unit_price_at_sale"],
+            )
+
+    return JsonResponse(
+        {"status": "success", "transaction_id": txn.transaction_id},
+        status=201,
+    )
