@@ -6,6 +6,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.db import transaction
+from django.db import connection
 
 import json
 from .models import Customer, Products, Branch, BranchInventory, Supplier, Transactions, TransactionLine, PurchaseOrder, ReceivesProductsFrom,Salesperson,Shipment
@@ -108,20 +109,51 @@ def generate_report_page(request):
     if not username:
         return redirect("login")
 
-    total_products = Products.objects.count()
-    total_suppliers = Supplier.objects.count()
-    total_transactions = Transactions.objects.count()
-    total_customers = Customer.objects.count()
-    total_shipments = Shipment.objects.count()
+    products = Products.objects.all().order_by("product_id")
+    suppliers = Supplier.objects.all().order_by("supplier_id")
+    transactions = Transactions.objects.select_related("customer", "sales").all().order_by("-transaction_id")
+    shipments = Shipment.objects.select_related("supplier", "branch", "carrier").all().order_by("-shipment_id")
 
-    return render(request, "GenerateReport.html", {
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT 
+                bi.branch_id,
+                b.address,
+                bi.product_id,
+                p.product_name,
+                bi.quantity
+            FROM BranchInventory bi
+            JOIN Branch b ON bi.branch_id = b.branch_id
+            JOIN Products p ON bi.product_id = p.product_id
+            ORDER BY bi.branch_id, bi.product_id
+        """)
+        inventory = [
+            {
+                "branch_id": row[0],
+                "address": row[1],
+                "product_id": row[2],
+                "product_name": row[3],
+                "quantity": row[4],
+            }
+            for row in cursor.fetchall()
+        ]
+
+    context = {
         "username": username,
-        "total_products": total_products,
-        "total_suppliers": total_suppliers,
-        "total_transactions": total_transactions,
-        "total_customers": total_customers,
-        "total_shipments": total_shipments,
-    })
+        "total_products": products.count(),
+        "total_suppliers": suppliers.count(),
+        "total_transactions": transactions.count(),
+        "total_customers": Customer.objects.count(),
+        "total_shipments": shipments.count(),
+        "total_inventory_records": len(inventory),
+        "products": products,
+        "suppliers": suppliers,
+        "transactions": transactions,
+        "shipments": shipments,
+        "inventory": inventory,
+    }
+
+    return render(request, "GenerateReport.html", context)
 
 
 def manage_customers(request):

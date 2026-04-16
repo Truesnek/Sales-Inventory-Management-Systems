@@ -11,21 +11,170 @@
         <a href="{% url 'create-purchase-order' %}" style="color:white; margin-right:15px;">Create Purchase Order</a>
         <a href="{% url 'generate-reports' %}" style="color:white; margin-right:15px;">Generate Report</a>
     </nav>
+
     <hr>
 
-    <h2>Generate Inventory Report</h2>
-    <!-- Inventory report table -->
+    <h1>System Report</h1>
+
+    <h2>Summary</h2>
+    <ul>
+        <li>Total Products: {{ total_products }}</li>
+        <li>Total Suppliers: {{ total_suppliers }}</li>
+        <li>Total Transactions: {{ total_transactions }}</li>
+        <li>Total Shipments: {{ total_shipments }}</li>
+        <li>Total Inventory Records: {{ total_inventory_records }}</li>
+    </ul>
+
     <hr>
 
-    <h2>Generate Sales Report</h2>
-    <!-- Sales report table -->
+    <h2>Product Report</h2>
+    {% if products %}
+    <table border="1" cellpadding="8" cellspacing="0">
+        <tr>
+            <th>Product ID</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Unit Price</th>
+            <th>Quantity</th>
+        </tr>
+        {% for product in products %}
+        <tr>
+            <td>{{ product.product_id }}</td>
+            <td>{{ product.product_name }}</td>
+            <td>{{ product.product_description }}</td>
+            <td>{{ product.unit_price }}</td>
+            <td>{{ product.num_products }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No product data found.</p>
+    {% endif %}
+
     <hr>
 
-    <h2>Generate Supplier Reports</h2>
-    <!-- Supplier report table -->
+    <h2>Supplier Report</h2>
+    {% if suppliers %}
+    <table border="1" cellpadding="8" cellspacing="0">
+        <tr>
+            <th>Supplier ID</th>
+            <th>Address</th>
+            <th>Contact Info</th>
+        </tr>
+        {% for supplier in suppliers %}
+        <tr>
+            <td>{{ supplier.supplier_id }}</td>
+            <td>{{ supplier.address }}</td>
+            <td>{{ supplier.contact_info }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No supplier data found.</p>
+    {% endif %}
+
     <hr>
 
-    <h2>Generate Transaction Reports</h2>
-    <!-- Transaction report table -->
+    <h2>Inventory Report</h2>
+    {% if inventory %}
+    <table border="1" cellpadding="8" cellspacing="0">
+        <tr>
+            <th>Branch ID</th>
+            <th>Address</th>
+            <th>Product</th>
+            <th>Quantity</th>
+        </tr>
+        {% for item in inventory %}
+        <tr>
+            <td>{{ item.branch_id }}</td>
+            <td>{{ item.address }}</td>
+            <td>{{ item.product_name }}</td>
+            <td>{{ item.quantity }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No inventory data found.</p>
+    {% endif %}
+
+    <hr>
+
+    <h2>Transaction Report</h2>
+    {% if transactions %}
+    <table border="1" cellpadding="8" cellspacing="0">
+        <tr>
+            <th>Transaction ID</th>
+            <th>Status</th>
+            <th>Total Amount</th>
+            <th>Date</th>
+            <th>Customer</th>
+            <th>Salesperson</th>
+        </tr>
+        {% for transaction in transactions %}
+        <tr>
+            <td>{{ transaction.transaction_id }}</td>
+            <td>{{ transaction.transaction_status }}</td>
+            <td>{{ transaction.total_amount }}</td>
+            <td>{{ transaction.transaction_date }}</td>
+            <td>
+                {% if transaction.customer %}
+                    {{ transaction.customer.customer_name }}
+                {% else %}
+                    N/A
+                {% endif %}
+            </td>
+            <td>
+                {% if transaction.sales %}
+                    {{ transaction.sales.employee_number.pk }}
+                {% else %}
+                    N/A
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No transaction data found.</p>
+    {% endif %}
+
+    <hr>
+
+    <h2>Shipment Report</h2>
+    {% if shipments %}
+    <table border="1" cellpadding="8" cellspacing="0">
+        <tr>
+            <th>Shipment ID</th>
+            <th>Status</th>
+            <th>Shipment Date</th>
+            <th>Delivery Date</th>
+            <th>Supplier</th>
+            <th>Branch</th>
+        </tr>
+        {% for shipment in shipments %}
+        <tr>
+            <td>{{ shipment.shipment_id }}</td>
+            <td>{{ shipment.shipment_status }}</td>
+            <td>{{ shipment.shipment_date }}</td>
+            <td>{{ shipment.delivery_date }}</td>
+            <td>
+                {% if shipment.supplier %}
+                    {{ shipment.supplier.supplier_id }}
+                {% else %}
+                    N/A
+                {% endif %}
+            </td>
+            <td>
+                {% if shipment.branch %}
+                    {{ shipment.branch.branch_id }}
+                {% else %}
+                    N/A
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No shipment data found.</p>
+    {% endif %}
 </body>
 </html>

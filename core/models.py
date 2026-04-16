@@ -67,7 +67,7 @@ class Users(models.Model):
 
 
 class Manager(models.Model):
-    employee_number = models.OneToOneField(Users, on_delete=models.DO_NOTHING, primary_key=True)
+    employee_number = models.OneToOneField(Users, on_delete=models.DO_NOTHING, primary_key=True, db_column='employee_number')
     approval_limit = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
     class Meta:
@@ -76,7 +76,7 @@ class Manager(models.Model):
 
 
 class Salesperson(models.Model):
-    employee_number = models.OneToOneField(Users, on_delete=models.DO_NOTHING, primary_key=True)
+    employee_number = models.OneToOneField(Users, on_delete=models.DO_NOTHING, primary_key=True, db_column='employee_number')
 
     class Meta:
         managed = False
@@ -135,7 +135,7 @@ class Shipment(models.Model):
     shipment_status = models.CharField(max_length=50, blank=True, null=True)
     supplier = models.ForeignKey(Supplier, on_delete=models.DO_NOTHING, blank=True, null=True)
     branch = models.ForeignKey(Branch, on_delete=models.DO_NOTHING, blank=True, null=True)
-    carrier = models.ForeignKey(Carrier, on_delete=models.DO_NOTHING, blank=True, null=True)
+    carrier = models.ForeignKey(Carrier, on_delete=models.DO_NOTHING, blank=True, null=True, db_column= 'vehicle_id')
 
     class Meta:
         managed = False
@@ -144,7 +144,7 @@ class Shipment(models.Model):
 
 class PurchaseOrder(models.Model):
     order_id = models.AutoField(primary_key=True)
-    employee_number = models.ForeignKey(Manager, on_delete=models.DO_NOTHING)
+    employee_number = models.ForeignKey(Manager, on_delete=models.DO_NOTHING, db_column='employee_number')
     order_date = models.DateField(blank=True, null=True)
     order_status = models.CharField(max_length=50, blank=True, null=True)
 
