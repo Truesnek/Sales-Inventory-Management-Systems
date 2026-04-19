@@ -494,3 +494,25 @@ def get_purchase_order(request, order_id):
         } if txn else None
     }
     return JsonResponse(po_data)
+
+def update_purchase(request):
+    po = PurchaseOrder.objects.select_related('transaction_id').get(pk=order_id)
+    txn = po.transaction_id
+    po.transaction_status = "Completed"
+    po.save()
+    lines = []
+    
+    if not txn:
+        return JsonResponse({"success": True, "message": "No transaction lines to update"})
+
+    lines = txn.transactionline_set.values_list('product_id', 'line_number', 'quantity', 'unit_price_at_sale')
+
+    for line in lines:
+        
+        try:
+            product = Product.objects.get(product_id=line[0])
+            product.num_products += line[2]
+            product.save()
+        except Product.DoesNotExist:
+            print("Product not found, cannot update")
+    return JsonResponse({"success": True, "message": "Purchase order updated"})

@@ -47,6 +47,13 @@
     <h2>Receive Products → Update Inventory Records</h2>
     <!-- Receive form -->
 
+    <label for="order_id">Purchase Order ID:</label>
+    <input type="number" id="order_id" name="order_id" required>
+    <button id="update-btn">Update Purchase</button>
+
+    <h2>Result</h2>
+    <pre id="result"></pre>
+
     <script>
 // Products injected from Django context
 let products = [];  // Will hold fetched product data
@@ -226,6 +233,49 @@ function displayPurchaseOrder(po) {
 
 // run on page load
 fetchOrders();
+
+document.getElementById("update-btn").addEventListener("click", async () => {
+    const orderIdInput = document.getElementById("order_id");
+    const resultEl = document.getElementById("result");
+    const orderId = orderIdInput.value;
+
+    if (!orderId) {
+        alert("Please enter a purchase order ID");
+        return;
+    }
+
+    try {
+        const response = await fetch(`/purchase/update/${orderId}/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie("csrftoken")  // CSRF token for POST
+            },
+        });
+
+        const data = await response.json();
+        resultEl.textContent = JSON.stringify(data, null, 4);
+    } catch (error) {
+        console.error("Error:", error);
+        resultEl.textContent = "An error occurred while updating the purchase order.";
+    }
+});
+
+// Function to get CSRF token from cookie (needed for POST requests)
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.startsWith(name + "=")) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
     </script>
 </body>
 </html>
