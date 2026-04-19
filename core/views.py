@@ -403,3 +403,94 @@ def add_transaction(request):
         {"status": "success", "transaction_id": txn.transaction_id},
         status=201,
     )
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def create_purchase_order(request):
+    """
+    API endpoint to create a transaction, transaction lines, and a purchase order.
+    Expects JSON data like:
+    {
+        "total_amount": 1000.50,
+        "transaction_date": "2026-04-18",
+        "transaction_due_date": "2026-04-25",
+        "transaction_discount": 50.0,
+        "lines": [
+            {"product_id": 1, "line_number": 1, "quantity": 2, "unit_price_at_sale": 200.0},
+            {"product_id": 2, "line_number": 2, "quantity": 1, "unit_price_at_sale": 600.5}
+        ],
+        "employee_number": 1,
+        "order_status": "New"
+    }
+    """
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    try:
+        with transaction.atomic():
+            # 1️⃣ Create the transaction
+            txn = Transactions.objects.create(
+                transaction_status="Pending",
+                total_amount=data.get("total_amount"),
+                transaction_date=data.get("transaction_date"),
+                transaction_due_date=data.get("transaction_due_date"),
+                transaction_discount=data.get("transaction_discount"),
+            )
+
+            # 2️⃣ Create transaction lines
+            for line in data.get("lines", []):
+                product = get_object_or_404(Products, pk=line["product_id"])
+                TransactionLine.objects.create(
+                    transaction=txn,
+                    product=product,
+                    line_number=line["line_number"],
+                    quantity=line["quantity"],
+                    unit_price_at_sale=line["unit_price_at_sale"],
+                )
+
+            # 3️⃣ Create purchase order linked to transaction
+            manager = get_object_or_404(Manager, pk=data["employee_number"])
+            po = PurchaseOrder.objects.create(
+                transaction_id=txn,
+                employee_number=manager,
+                order_date=data.get("transaction_date"),
+                order_status=data.get("order_status"),
+            )
+
+        return JsonResponse({
+            "status": "success",
+            "transaction_id": txn.transaction_id,
+            "purchase_order_id": po.order_id
+        }, status=201)
+
+    except KeyError as e:
+        return JsonResponse({"error": f"Missing field: {str(e)}"}, status=400)
+
+def list_purchase_orders(request):
+    orders = PurchaseOrder.objects.all().values('order_id', 'order_status')
+    return JsonResponse(list(orders), safe=False)
+
+def get_purchase_order(request, order_id):
+    po = PurchaseOrder.objects.select_related('transaction_id').get(pk=order_id)
+    txn = po.transaction_id
+    lines = []
+    if txn:
+        lines = list(txn.transactionline_set.values('product_id', 'line_number', 'quantity', 'unit_price_at_sale'))
+    po_data = {
+        'order_id': po.order_id,
+        'employee_number': po.employee_number_id,
+        'order_date': str(po.order_date),
+        'order_status': po.order_status,
+        'transaction': {
+            'transaction_id': txn.transaction_id,
+            'transaction_date': str(txn.transaction_date),
+            'transaction_due_date': str(txn.transaction_due_date),
+            'transaction_status': txn.transaction_status,
+            'transaction_discount': float(txn.transaction_discount) if txn.transaction_discount else 0,
+            'total_amount': float(txn.total_amount) if txn.total_amount else 0,
+            'lines': lines
+        } if txn else None
+    }
+    return JsonResponse(po_data)

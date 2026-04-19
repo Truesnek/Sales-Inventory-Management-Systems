@@ -7,7 +7,7 @@ class Branch(models.Model):
     address = models.CharField(max_length=255)
 
     class Meta:
-        managed = False
+        #managed = False
         db_table = 'Branch'
 
 
@@ -17,7 +17,7 @@ class Customer(models.Model):
     contact_info = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
-        managed = False
+        #managed = False
         db_table = 'Customer'
 
 
@@ -29,7 +29,7 @@ class Products(models.Model):
     num_products = models.IntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        #managed = False
         db_table = 'Products'
 
 
@@ -39,7 +39,7 @@ class Supplier(models.Model):
     contact_info = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
-        managed = False
+        #managed = False
         db_table = 'Supplier'
 
 
@@ -49,7 +49,7 @@ class Carrier(models.Model):
     tracking_number = models.CharField(max_length=100, blank=True, null=True)
 
     class Meta:
-        managed = False
+        #managed = False
         db_table = 'Carrier'
 
 
@@ -62,7 +62,7 @@ class Users(models.Model):
     branch = models.ForeignKey(Branch, on_delete=models.DO_NOTHING)
 
     class Meta:
-        managed = False
+        #managed = False
         db_table = 'Users'
 
 
@@ -71,7 +71,7 @@ class Manager(models.Model):
     approval_limit = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
     class Meta:
-        managed = False
+        #managed = False
         db_table = 'Manager'
 
 
@@ -79,7 +79,7 @@ class Salesperson(models.Model):
     employee_number = models.OneToOneField(Users, on_delete=models.DO_NOTHING, primary_key=True, db_column='employee_number')
 
     class Meta:
-        managed = False
+        #managed = False
         db_table = 'Salesperson'
 
 
@@ -92,11 +92,9 @@ class Transactions(models.Model):
     transaction_status = models.CharField(max_length=50, blank=True, null=True)
     transaction_discount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    sales = models.ForeignKey(Salesperson, on_delete=models.DO_NOTHING, blank=True, null=True)
-    customer = models.ForeignKey(Customer, on_delete=models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
+        #managed = False
         db_table = 'Transactions'
 
 
@@ -108,7 +106,7 @@ class TransactionLine(models.Model):
     unit_price_at_sale = models.DecimalField(max_digits=10, decimal_places=2)
 
     class Meta:
-        managed = False
+        #managed = False
         db_table = 'TransactionLine'
         unique_together = (('transaction', 'product'),)
 
@@ -121,7 +119,7 @@ class BranchInventory(models.Model):
     quantity = models.IntegerField()
 
     class Meta:
-        managed = False
+        #managed = False
         db_table = 'BranchInventory'
         unique_together = (('branch', 'product'),)
 
@@ -138,7 +136,7 @@ class Shipment(models.Model):
     carrier = models.ForeignKey(Carrier, on_delete=models.DO_NOTHING, blank=True, null=True, db_column= 'vehicle_id')
 
     class Meta:
-        managed = False
+        #managed = False
         db_table = 'Shipment'
 
 
@@ -147,9 +145,10 @@ class PurchaseOrder(models.Model):
     employee_number = models.ForeignKey(Manager, on_delete=models.DO_NOTHING, db_column='employee_number')
     order_date = models.DateField(blank=True, null=True)
     order_status = models.CharField(max_length=50, blank=True, null=True)
+    transaction_id=models.ForeignKey(Transactions, on_delete=models.DO_NOTHING, blank=True, null=True)
 
     class Meta:
-        managed = False
+        #managed = False
         db_table = 'PurchaseOrder'
 
 
@@ -158,6 +157,6 @@ class ReceivesProductsFrom(models.Model):
     branch = models.ForeignKey(Branch, on_delete=models.DO_NOTHING)
 
     class Meta:
-        managed = False
+        #managed = False
         db_table = 'ReceivesProductsFrom'
         unique_together = (('supplier', 'branch'),)

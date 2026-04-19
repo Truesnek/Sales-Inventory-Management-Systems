@@ -15,13 +15,217 @@
 
     <h2>View Purchase Order</h2>
     <!-- Table of purchase orders -->
+    <select id="orderDropdown">
+    <option value="">-- Select Order --</option>
+    </select>
+
+    <div id="poDetails" style="margin-top:20px;"></div> 
     <hr>
 
     <h2>Approve Purchase Order</h2>
     <!-- Approve form/button -->
+
+    <form id="purchase-order-form">
+    Total Amount: <input type="number" step="0.01" name="total_amount"><br>
+    Transaction Date: <input type="date" name="transaction_date"><br>
+    Transaction Due Date: <input type="date" name="transaction_due_date"><br>
+    Transaction Discount: <input type="number" step="0.01" name="transaction_discount"><br><br>
+
+<div id="lines-container"></div>
+<button type="button" id="add-line-btn">Add Line</button><br><br>
+
+    Employee Number: <input type="number" name="employee_number"><br>
+    Order Status: <input type="text" name="order_status" value="New"><br><br>
+
+    <button type="submit">Submit</button>
+</form>
+
+    <p id="updateMessage"></p>
+
     <hr>
 
     <h2>Receive Products → Update Inventory Records</h2>
     <!-- Receive form -->
+
+    <script>
+// Products injected from Django context
+let products = [];  // Will hold fetched product data
+let lineCount = 1;
+const container = document.getElementById("lines-container");
+
+// Fetch products from Django and store them
+async function loadProducts() {
+    const response = await fetch("/api/products/view/");
+    products = await response.json();
+    return products;
+}
+
+// Function to create a new line
+function createLine(lineNumber) {
+    const div = document.createElement("div");
+    div.className = "line";
+
+    // Create dropdown options dynamically
+    const options = products.map(p => 
+        `<option value="${p.product_id}" data-quantity="${p.num_products}" data-price="${p.unit_price}">
+            ${p.product_name || "Unnamed Product"}
+        </option>`).join('');
+
+    div.innerHTML = `
+        Line Number: <input type="number" name="line_number" value="${lineNumber}" readonly>
+        Product: 
+        <select name="product_id">
+            <option value="">Select Product</option>
+            ${options}
+        </select>
+        Quantity: <input type="number" name="quantity" readonly>
+        Unit Price at Sale: <input type="number" step="0.01" name="unit_price_at_sale" readonly>
+    `;
+
+    const select = div.querySelector('select[name="product_id"]');
+    const quantityInput = div.querySelector('input[name="quantity"]');
+    const priceInput = div.querySelector('input[name="unit_price_at_sale"]');
+
+    // When a product is selected, auto-fill quantity and price
+    select.addEventListener('change', () => {
+        const selectedOption = select.selectedOptions[0];
+        if (selectedOption && selectedOption.value) {
+            quantityInput.value = selectedOption.dataset.quantity;
+            priceInput.value = parseFloat(selectedOption.dataset.price).toFixed(2);
+        } else {
+            quantityInput.value = '';
+            priceInput.value = '';
+        }
+    });
+
+    return div;
+}
+
+// Initialize page
+
+document.getElementById("add-line-btn").onclick = async function() {
+    lineCount++;
+    const products = await loadProducts();  // Load products from backend first
+    container.appendChild(createLine(lineCount));
+};
+
+
+init();
+
+document.getElementById("purchase-order-form").onsubmit = function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const lines = Array.from(form.querySelectorAll(".line")).map(line => ({
+        product_id: parseInt(line.querySelector('[name="product_id"]').value),
+        line_number: parseInt(line.querySelector('[name="line_number"]').value),
+        quantity: parseInt(line.querySelector('[name="quantity"]').value),
+        unit_price_at_sale: parseFloat(line.querySelector('[name="unit_price_at_sale"]').value)
+    }));
+
+    const data = {
+        total_amount: parseFloat(form.total_amount.value),
+        transaction_date: form.transaction_date.value,
+        transaction_due_date: form.transaction_due_date.value,
+        transaction_discount: parseFloat(form.transaction_discount.value) || 0,
+        lines: lines,
+        employee_number: parseInt(form.employee_number.value),
+        order_status: form.order_status.value
+    };
+
+    fetch("/api/purchase-order/add/", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(json => alert("Purchase order created! ID: " + (json.purchase_order_id || json.status)))
+    .catch(err => console.error(err));
+};
+
+async function fetchOrders() {
+    try {
+        const response = await fetch('/purchase-orders/');
+        if (!response.ok) throw new Error("Failed to fetch orders");
+
+        const orders = await response.json();
+
+        const dropdown = document.getElementById("orderDropdown");
+
+        orders.forEach(order => {
+            const option = document.createElement("option");
+            option.value = order.order_id;
+            option.textContent = `Order ID: ${order.order_id} - Status: ${order.order_status}`;
+            dropdown.appendChild(option);
+        });
+
+        dropdown.addEventListener("change", (e) => {
+            const orderId = e.target.value;
+            if (orderId) {
+                fetchPurchaseOrder(orderId);
+            } else {
+                document.getElementById("poDetails").innerHTML = "";
+            }
+        });
+
+    } catch (err) {
+        document.getElementById("poDetails").innerHTML =
+            `<p style="color:red">${err.message}</p>`;
+    }
+}
+
+async function fetchPurchaseOrder(orderId) {
+    try {
+        const response = await fetch(`/purchase-order/${orderId}/`);
+        if (!response.ok) throw new Error("Purchase order not found");
+
+        const po = await response.json();
+        displayPurchaseOrder(po);
+
+    } catch (err) {
+        document.getElementById("poDetails").innerHTML =
+            `<p style="color:red">${err.message}</p>`;
+    }
+}
+
+function displayPurchaseOrder(po) {
+    let html = `
+        <h2>Order ID: ${po.order_id}</h2>
+        <p>Employee Number: ${po.employee_number}</p>
+        <p>Order Date: ${po.order_date}</p>
+        <p>Order Status: ${po.order_status}</p>
+    `;
+
+    if (po.transaction) {
+        html += `
+            <h3>Transaction</h3>
+            <p>Transaction ID: ${po.transaction.transaction_id}</p>
+            <p>Date: ${po.transaction.transaction_date}</p>
+            <p>Due Date: ${po.transaction.transaction_due_date}</p>
+            <p>Status: ${po.transaction.transaction_status}</p>
+            <p>Discount: ${po.transaction.transaction_discount}</p>
+            <p>Total Amount: ${po.transaction.total_amount}</p>
+
+            <h4>Lines</h4>
+            <ul>
+                ${po.transaction.lines.map(line => `
+                    <li>
+                        Product ID: ${line.product_id},
+                        Line: ${line.line_number},
+                        Quantity: ${line.quantity},
+                        Unit Price: ${line.unit_price_at_sale}
+                    </li>
+                `).join('')}
+            </ul>
+        `;
+    } else {
+        html += "<p>No transaction linked to this order.</p>";
+    }
+
+    document.getElementById("poDetails").innerHTML = html;
+}
+
+// run on page load
+fetchOrders();
+    </script>
 </body>
 </html>
