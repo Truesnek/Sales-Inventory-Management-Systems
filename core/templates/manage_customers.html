@@ -13,9 +13,73 @@
     <hr>
 
     <h2>Add Customer</h2>
-    <!-- Add customer form goes here -->
+    <form id="addCustomerForm">
+        <label>Customer Name:</label><br>
+        <input type="text" id="add_customer_name" required><br><br>
+        <label>Contact Info:</label><br>
+        <input type="text" id="add_contact_info"><br><br>
+        <button type="submit">Add Customer</button>
+    </form>
+    <p id="addMessage"></p>
+
+    <hr>
 
     <h2>Update Customer Information</h2>
-    <!-- Update customer form/table goes here -->
+    <form id="updateCustomerForm">
+        <label>Customer ID:</label><br>
+        <input type="number" id="update_customer_id" required><br><br>
+        <label>Customer Name:</label><br>
+        <input type="text" id="update_customer_name"><br><br>
+        <label>Contact Info:</label><br>
+        <input type="text" id="update_contact_info"><br><br>
+        <button type="submit">Update Customer</button>
+    </form>
+    <p id="updateMessage"></p>
+
+    <script>
+        document.getElementById("addCustomerForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+            const data = {
+                customer_name: document.getElementById("add_customer_name").value,
+                contact_info: document.getElementById("add_contact_info").value
+            };
+            const response = await fetch("/api/customers/add/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            });
+            if (response.ok) {
+                document.getElementById("addMessage").innerText = "Customer added successfully.";
+                document.getElementById("addCustomerForm").reset();
+            } else {
+                document.getElementById("addMessage").innerText = "Failed to add customer.";
+            }
+        });
+
+        document.getElementById("updateCustomerForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+            const customerId = document.getElementById("update_customer_id").value;
+            const data = {
+                customer_name: document.getElementById("update_customer_name").value,
+                contact_info: document.getElementById("update_contact_info").value
+            };
+            const response = await fetch(`/api/customers/update/${customerId}/`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            });
+            if (response.ok) {
+                document.getElementById("updateMessage").innerText = "Customer updated successfully.";
+                document.getElementById("updateCustomerForm").reset();
+            } else {
+                document.getElementById("updateMessage").innerText = "Failed to update customer.";
+            }
+        });
+        
+    </script>
 </body>
 </html>
