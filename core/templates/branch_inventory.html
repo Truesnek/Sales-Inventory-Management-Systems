@@ -13,6 +13,40 @@
     <hr>
 
     <h2>Branch Inventory Table</h2>
-    <!-- Branch inventory table goes here -->
+
+    <button onclick="loadBranchInventory()">Refresh Branch Inventory</button><br><br>
+    <table border="1" id="branchInventoryTable">
+        <thead>
+            <tr>
+                <th>Branch ID</th>
+                <th>Branch Address</th>
+                <th>Product ID</th>
+                <th>Product Name</th>
+                <th>Quantity</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        async function loadBranchInventory() {
+            const response = await fetch("/api/inventory/view/");
+            const inventory = await response.json();
+            const tbody = document.querySelector("#branchInventoryTable tbody");
+            tbody.innerHTML = "";
+            inventory.forEach(item => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${item.branch_id}</td>
+                    <td>${item.address || ""}</td>
+                    <td>${item.product_id}</td>
+                    <td>${item.product_name || ""}</td>
+                    <td>${item.quantity}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        loadBranchInventory();
+    </script>
 </body>
 </html>
