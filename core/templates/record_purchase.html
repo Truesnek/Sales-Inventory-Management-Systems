@@ -11,11 +11,65 @@
         <a href="{% url 'transaction_history' %}" style="color:white; margin-right:15px;">View Transaction History</a>
     </nav>
     <hr>
-
     <h2>Process Transaction</h2>
-    <!-- Transaction form or interface goes here -->
+    <form id="purchaseForm">
+        <label>Customer ID:</label><br>
+        <input type="number" id="customer_id" required><br><br>
 
+        <label>Salesperson ID:</label><br>
+        <input type="number" id="salesperson_id" required><br><br>
+
+        <label>Transaction Status:</label><br>
+        <input type="text" id="transaction_status"><br><br>
+
+        <label>Total Amount:</label><br>
+        <input type="number" id="total_amount" step="0.01"><br><br>
+
+        <label>Transaction Date:</label><br>
+        <input type="date" id="transaction_date"><br><br>
+
+        <label>Transaction Due Date:</label><br>
+        <input type="date" id="transaction_due_date"><br><br>
+
+        <label>Transaction Discount:</label><br>
+        <input type="number" id="transaction_discount" step="0.01"><br><br>
+
+        <button type="submit">Record Purchase</button>
+    </form>
+    <p id="purchaseMessage"></p>
+    <hr>
     <h2>Generate Invoice</h2>
-    <!-- Invoice display or PDF generation goes here -->
+    <p>Invoice generation will be added later.</p>
+
+    <script>
+        document.getElementById("purchaseForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+            const data = {
+                customer_id: document.getElementById("customer_id").value,
+                salesperson_id: document.getElementById("salesperson_id").value,
+                transaction_status: document.getElementById("transaction_status").value,
+                total_amount: document.getElementById("total_amount").value,
+                transaction_date: document.getElementById("transaction_date").value,
+                transaction_due_date: document.getElementById("transaction_due_date").value,
+                transaction_discount: document.getElementById("transaction_discount").value,
+                lines: []
+            };
+
+            const response = await fetch("/api/transactions/add/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                document.getElementById("purchaseMessage").innerText = "Purchase recorded successfully.";
+                document.getElementById("purchaseForm").reset();
+            } else {
+                document.getElementById("purchaseMessage").innerText = "Failed to record purchase.";
+            }
+        });
+    </script>
 </body>
 </html>
