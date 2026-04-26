@@ -196,7 +196,6 @@ def view_products(request):
             "product_name": p.product_name,
             "product_description": p.product_description,
             "unit_price": str(p.unit_price),
-            "num_products": p.num_products,
         }
         for p in products
     ]
@@ -287,23 +286,15 @@ def update_customer(request, customer_id):
 @csrf_exempt
 @require_http_methods(["GET"])
 def view_branch_inventory(request):
-    inventory = (
-        BranchInventory.objects.select_related("branch", "product")
-        .all()
-        .order_by("branch__branch_id", "product__product_id")
-    )
-
+    products = Products.objects.all().order_by("product_id")
     data = [
         {
-            "branch_id": item.branch.branch_id,
-            "address": item.branch.address,
-            "product_id": item.product.product_id,
-            "product_name": item.product.product_name,
-            "quantity": item.quantity,
+            "product_id": p.product_id,
+            "product_name": p.product_name,
+            "num_products": str(p.num_products),
         }
-        for item in inventory
+        for p in products
     ]
-
     return JsonResponse(data, safe=False)
 
 

@@ -24,7 +24,6 @@
                 <th>Product Name</th>
                 <th>Product Description</th>
                 <th>Unit Price</th>
-                <th>Number of Products</th>
             </tr>
         </thead>
         <tbody></tbody>
@@ -34,14 +33,24 @@
 
     <h2>View Branch Inventory</h2>
     <!-- Inventory table -->
+     <button onclick="loadInventory()">Refresh Products</button><br><br>
+
+    <table border="1" id="productsTable">
+        <thead>
+            <tr>
+                <th>Product ID</th>
+                <th>Product Name</th>
+                <th>Product Description</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
     <hr>
 
     <h2>Monitor Stock Levels</h2>
     <!-- Stock monitoring -->
     <hr>
 
-    <h2>Update Inventory Records</h2>
-    <!-- Update form -->
 
     <script>
         async function loadProducts() {
@@ -58,7 +67,23 @@
                     <td>${product.product_name || ""}</td>
                     <td>${product.product_description || ""}</td>
                     <td>${product.unit_price || ""}</td>
-                    <td>${product.num_products || ""}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        async function loadInventory() {
+            const response = await fetch("/api/products/view/");
+            const products = await response.json();
+
+            const tbody = document.querySelector("#productsTable tbody");
+            tbody.innerHTML = "";
+
+            products.forEach(product => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${product.product_id}</td>
+                    <td>${product.product_name || ""}</td>
+                    <td>${product.num_product || ""}</td>
                 `;
                 tbody.appendChild(row);
             });
