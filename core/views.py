@@ -461,7 +461,7 @@ def create_purchase_order(request):
 
     try:
         with transaction.atomic():
-            # 1️⃣ Create the transaction
+            #  Create the transaction
             txn = Transactions.objects.create(
                 transaction_status="Pending",
                 total_amount=data.get("total_amount"),
@@ -470,7 +470,7 @@ def create_purchase_order(request):
                 transaction_discount=data.get("transaction_discount"),
             )
 
-            # 2️⃣ Create transaction lines
+            #  Create transaction lines
             for line in data.get("lines", []):
                 product = get_object_or_404(Products, pk=line["product_id"])
                 TransactionLine.objects.create(
@@ -481,7 +481,7 @@ def create_purchase_order(request):
                     unit_price_at_sale=line["unit_price_at_sale"],
                 )
 
-            # 3️⃣ Create purchase order linked to transaction
+            #  Create purchase order linked to transaction
             manager = get_object_or_404(Manager, pk=data["employee_number"])
             po = PurchaseOrder.objects.create(
                 transaction_id=txn,
