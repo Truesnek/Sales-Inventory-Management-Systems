@@ -14,8 +14,7 @@
     <hr>
 
     <h2>View Product</h2>
-    <!-- View product table -->
-     <button onclick="loadProducts()">Refresh Products</button><br><br>
+    <button onclick="loadProducts()">Refresh Products</button><br><br>
 
     <table border="1" id="productsTable">
         <thead>
@@ -32,25 +31,37 @@
     <hr>
 
     <h2>View Branch Inventory</h2>
-    <!-- Inventory table -->
-     <button onclick="loadInventory()">Refresh Products</button><br><br>
+    <button onclick="loadInventory()">Refresh Inventory</button><br><br>
 
-    <table border="1" id="productsTable">
+    <table border="1" id="inventoryTable">
         <thead>
             <tr>
+                <th>Branch ID</th>
+                <th>Address</th>
                 <th>Product ID</th>
                 <th>Product Name</th>
-                <th>Product Description</th>
+                <th>Quantity</th>
             </tr>
         </thead>
         <tbody></tbody>
     </table>
+
     <hr>
 
     <h2>Monitor Stock Levels</h2>
-    <!-- Stock monitoring -->
-    <hr>
+    <button onclick="loadStockLevels()">Refresh Stock Levels</button><br><br>
 
+    <table border="1" id="stockTable">
+        <thead>
+            <tr>
+                <th>Product ID</th>
+                <th>Product Name</th>
+                <th>Total Quantity</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 
     <script>
         async function loadProducts() {
@@ -71,19 +82,63 @@
                 tbody.appendChild(row);
             });
         }
-        async function loadInventory() {
-            const response = await fetch("/api/products/view/");
-            const products = await response.json();
 
-            const tbody = document.querySelector("#productsTable tbody");
+        async function loadInventory() {
+            const response = await fetch("/api/inventory/view/");
+            const inventory = await response.json();
+
+            const tbody = document.querySelector("#inventoryTable tbody");
             tbody.innerHTML = "";
 
-            products.forEach(product => {
+            inventory.forEach(item => {
                 const row = document.createElement("tr");
                 row.innerHTML = `
-                    <td>${product.product_id}</td>
-                    <td>${product.product_name || ""}</td>
-                    <td>${product.num_product || ""}</td>
+                    <td>${item.branch_id}</td>
+                    <td>${item.address || ""}</td>
+                    <td>${item.product_id}</td>
+                    <td>${item.product_name || ""}</td>
+                    <td>${item.quantity}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        async function loadStockLevels() {
+            const response = await fetch("/api/inventory/view/");
+            const inventory = await response.json();
+
+            const stockTotals = {};
+
+            inventory.forEach(item => {
+                if (!stockTotals[item.product_id]) {
+                    stockTotals[item.product_id] = {
+                        product_name: item.product_name,
+                        quantity: 0
+                    };
+                }
+
+                stockTotals[item.product_id].quantity += Number(item.quantity);
+            });
+
+            const tbody = document.querySelector("#stockTable tbody");
+            tbody.innerHTML = "";
+
+            Object.keys(stockTotals).forEach(productId => {
+                const item = stockTotals[productId];
+
+                let status = "In Stock";
+                if (item.quantity === 0) {
+                    status = "Out of Stock";
+                } else if (item.quantity < 10) {
+                    status = "Low Stock";
+                }
+
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${productId}</td>
+                    <td>${item.product_name || ""}</td>
+                    <td>${item.quantity}</td>
+                    <td>${status}</td>
                 `;
                 tbody.appendChild(row);
             });

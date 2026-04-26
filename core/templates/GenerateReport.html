@@ -116,21 +116,8 @@
             <td>{{ transaction.transaction_status }}</td>
             <td>{{ transaction.total_amount }}</td>
             <td>{{ transaction.transaction_date }}</td>
-            <td>
-                {% if transaction.customer %}
-                    {{ transaction.customer.customer_name }}
-                {% else %}
-                    N/A
-                {% endif %}
-            </td>
-            <td>
-                {% if transaction.sales %}
-                    {{ transaction.sales.employee_number.pk }}
-                {% else %}
-                    N/A
-                {% endif %}
-            </td>
-        </tr>
+            <td>{{ transaction.customer_name }}</td>
+            <td>{{ transaction.sales_id }}</td>
         {% endfor %}
     </table>
     {% else %}

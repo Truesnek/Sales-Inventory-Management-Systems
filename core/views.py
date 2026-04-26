@@ -111,7 +111,6 @@ def generate_report_page(request):
 
     products = Products.objects.all().order_by("product_id")
     suppliers = Supplier.objects.all().order_by("supplier_id")
-    transactions = Transactions.objects.select_related("customer", "sales").all().order_by("-transaction_id")
     shipments = Shipment.objects.select_related("supplier", "branch", "carrier").all().order_by("-shipment_id")
 
     with connection.cursor() as cursor:
@@ -138,11 +137,35 @@ def generate_report_page(request):
             for row in cursor.fetchall()
         ]
 
+        cursor.execute("""
+            SELECT
+                t.transaction_id,
+                t.transaction_status,
+                t.total_amount,
+                t.transaction_date,
+                c.customer_name,
+                t.sales_id
+            FROM Transactions t
+            LEFT JOIN Customer c ON t.customer_id = c.customer_id
+            ORDER BY t.transaction_id DESC
+        """)
+        transactions = [
+            {
+                "transaction_id": row[0],
+                "transaction_status": row[1],
+                "total_amount": row[2],
+                "transaction_date": row[3],
+                "customer_name": row[4],
+                "sales_id": row[5],
+            }
+            for row in cursor.fetchall()
+        ]
+
     context = {
         "username": username,
         "total_products": products.count(),
         "total_suppliers": suppliers.count(),
-        "total_transactions": transactions.count(),
+        "total_transactions": len(transactions),
         "total_customers": Customer.objects.count(),
         "total_shipments": shipments.count(),
         "total_inventory_records": len(inventory),
@@ -286,16 +309,33 @@ def update_customer(request, customer_id):
 @csrf_exempt
 @require_http_methods(["GET"])
 def view_branch_inventory(request):
-    products = Products.objects.all().order_by("product_id")
-    data = [
-        {
-            "product_id": p.product_id,
-            "product_name": p.product_name,
-            "num_products": str(p.num_products),
-        }
-        for p in products
-    ]
-    return JsonResponse(data, safe=False)
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT 
+                bi.branch_id,
+                b.address,
+                bi.product_id,
+                p.product_name,
+                bi.quantity
+            FROM BranchInventory bi
+            JOIN Branch b ON bi.branch_id = b.branch_id
+            JOIN Products p ON bi.product_id = p.product_id
+            ORDER BY bi.branch_id, bi.product_id
+        """)
+
+        inventory = [
+            {
+                "branch_id": row[0],
+                "address": row[1],
+                "product_id": row[2],
+                "product_name": row[3],
+                "quantity": row[4],
+            }
+            for row in cursor.fetchall()
+        ]
+
+    return JsonResponse(inventory, safe=False)
+
 
 
 @csrf_exempt
