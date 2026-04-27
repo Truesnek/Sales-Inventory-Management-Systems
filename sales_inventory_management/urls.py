@@ -28,6 +28,8 @@ urlpatterns = [
     path('record-purchase/', views.record_purchase_view, name='record_purchase'),
     path('transaction-history/', views.transaction_history_view, name='transaction_history'),
     path("api/transactions/view/", views.view_transactions, name="view_transactions"),
+    path("api/transactions/add/", views.add_transaction, name="add-transaction"),
+    path("api/invoice/<int:transaction_id>/", views.generate_invoice, name="generate-invoice"),
 
 # Manager Pages
     path('products-page/', views.manage_products, name='manage-products'),
