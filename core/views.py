@@ -577,3 +577,59 @@ def update_purchase(request):
         except Product.DoesNotExist:
             print("Product not found, cannot update")
     return JsonResponse({"success": True, "message": "Purchase order updated"})
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def generate_invoice(request, transaction_id):
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT
+                transaction_id,
+                transaction_date,
+                transaction_due_date,
+                transaction_status,
+                transaction_discount,
+                total_amount
+            FROM Transactions
+            WHERE transaction_id = %s
+        """, [transaction_id])
+
+        transaction_row = cursor.fetchone()
+
+        if not transaction_row:
+            return JsonResponse({"error": "Transaction not found"}, status=404)
+        cursor.execute("""
+            SELECT
+                tl.line_number,
+                tl.product_id,
+                p.product_name,
+                tl.quantity,
+                tl.unit_price_at_sale
+            FROM TransactionLine tl
+            JOIN Products p ON tl.product_id = p.product_id
+            WHERE tl.transaction_id = %s
+            ORDER BY tl.line_number
+        """, [transaction_id])
+
+        lines = [
+            {
+                "line_number": row[0],
+                "product_id": row[1],
+                "product_name": row[2],
+                "quantity": row[3],
+                "unit_price_at_sale": float(row[4]),
+                "line_total": float(row[3] * row[4]),
+            }
+            for row in cursor.fetchall()
+        ]
+
+    invoice = {
+        "transaction_id": transaction_row[0],
+        "transaction_date": str(transaction_row[1]),
+        "transaction_due_date": str(transaction_row[2]),
+        "transaction_status": transaction_row[3],
+        "transaction_discount": float(transaction_row[4]) if transaction_row[4] else 0,
+        "total_amount": float(transaction_row[5]) if transaction_row[5] else 0,
+        "lines": lines,
+    }
+    return JsonResponse(invoice)
