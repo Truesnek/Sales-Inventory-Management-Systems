@@ -13,12 +13,6 @@
     <hr>
     <h2>Process Transaction</h2>
     <form id="purchaseForm">
-        <label>Customer ID:</label><br>
-        <input type="number" id="customer_id" required><br><br>
-
-        <label>Salesperson ID:</label><br>
-        <input type="number" id="salesperson_id" required><br><br>
-
         <label>Transaction Status:</label><br>
         <input type="text" id="transaction_status"><br><br>
 
@@ -39,14 +33,18 @@
     <p id="purchaseMessage"></p>
     <hr>
     <h2>Generate Invoice</h2>
-    <p>Invoice generation will be added later.</p>
+
+    <label>Transaction ID:</label><br>
+    <input type="number" id="invoice_transaction_id"><br><br>
+
+    <button onclick="generateInvoice()">Generate Invoice</button>
+
+    <div id="invoiceBox"></div>
 
     <script>
         document.getElementById("purchaseForm").addEventListener("submit", async function(event) {
             event.preventDefault();
             const data = {
-                customer_id: document.getElementById("customer_id").value,
-                salesperson_id: document.getElementById("salesperson_id").value,
                 transaction_status: document.getElementById("transaction_status").value,
                 total_amount: document.getElementById("total_amount").value,
                 transaction_date: document.getElementById("transaction_date").value,
@@ -70,6 +68,63 @@
                 document.getElementById("purchaseMessage").innerText = "Failed to record purchase.";
             }
         });
+       
+        async function generateInvoice() {
+            const transactionId = document.getElementById("invoice_transaction_id").value;
+
+            const response = await fetch(`/api/invoice/${transactionId}/`);
+
+            if (!response.ok) {
+                document.getElementById("invoiceBox").innerHTML = "<p>Failed to generate invoice.</p>";
+                return;
+            }
+
+            const invoice = await response.json();
+
+            let html = `
+                <h3>Invoice</h3>
+                <p><strong>Transaction ID:</strong> ${invoice.transaction_id}</p>
+                <p><strong>Transaction Date:</strong> ${invoice.transaction_date}</p>
+                <p><strong>Due Date:</strong> ${invoice.transaction_due_date}</p>
+                <p><strong>Status:</strong> ${invoice.transaction_status}</p>
+                <p><strong>Discount:</strong> ${invoice.transaction_discount}</p>
+                <p><strong>Total Amount:</strong> ${invoice.total_amount}</p>
+
+                <h4>Purchased Products</h4>
+                <table border="1">
+                    <thead>
+                        <tr>
+                            <th>Line Number</th>
+                            <th>Product ID</th>
+                            <th>Product Name</th>
+                            <th>Quantity</th>
+                            <th>Unit Price</th>
+                            <th>Line Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            invoice.lines.forEach(line => {
+                html += `
+                    <tr>
+                        <td>${line.line_number}</td>
+                        <td>${line.product_id}</td>
+                        <td>${line.product_name}</td>
+                        <td>${line.quantity}</td>
+                        <td>${line.unit_price_at_sale}</td>
+                        <td>${line.line_total}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            document.getElementById("invoiceBox").innerHTML = html;
+        }
     </script>
 </body>
 </html>
