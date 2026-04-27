@@ -57,7 +57,7 @@
     <script>
 // Products injected from Django context
 let products = [];  // Will hold fetched product data
-let lineCount = 1;
+let lineCount = 0;
 const container = document.getElementById("lines-container");
 
 // Fetch products from Django and store them
@@ -115,10 +115,7 @@ document.getElementById("add-line-btn").onclick = async function() {
     const products = await loadProducts();  // Load products from backend first
     container.appendChild(createLine(lineCount));
 };
-
-
-init();
-
+loadProducts();
 document.getElementById("purchase-order-form").onsubmit = function(e) {
     e.preventDefault();
     const form = e.target;
