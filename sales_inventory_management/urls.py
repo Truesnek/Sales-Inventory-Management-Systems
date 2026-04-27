@@ -27,6 +27,7 @@ urlpatterns = [
     path('manage-customers/', views.manage_customers_view, name='manage_customers'),
     path('record-purchase/', views.record_purchase_view, name='record_purchase'),
     path('transaction-history/', views.transaction_history_view, name='transaction_history'),
+    path("api/transactions/view/", views.view_transactions, name="view_transactions"),
 
 # Manager Pages
     path('products-page/', views.manage_products, name='manage-products'),

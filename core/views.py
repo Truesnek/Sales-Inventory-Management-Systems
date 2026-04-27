@@ -401,6 +401,36 @@ def delete_supplier(request, supplier_id):
 # -------------------------
 
 @csrf_exempt
+@require_http_methods(["GET"])
+def view_transactions(request):
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT
+                transaction_id,
+                transaction_date,
+                transaction_due_date,
+                transaction_status,
+                transaction_discount,
+                total_amount
+            FROM Transactions
+            ORDER BY transaction_id DESC
+        """)
+
+        transactions = [
+            {
+                "transaction_id": row[0],
+                "transaction_date": row[1],
+                "transaction_due_date": row[2],
+                "transaction_status": row[3],
+                "transaction_discount": row[4],
+                "total_amount": row[5],
+            }
+            for row in cursor.fetchall()
+        ]
+
+    return JsonResponse(transactions, safe=False)
+
+@csrf_exempt
 @require_http_methods(["POST"])
 def add_transaction(request):
     data = json.loads(request.body)
