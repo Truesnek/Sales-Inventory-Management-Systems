@@ -1,7 +1,5 @@
 # Create your views here.
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import authenticate, login
-from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -9,7 +7,7 @@ from django.db import transaction
 from django.db import connection
 
 import json
-from .models import Customer, Products, Branch, BranchInventory, Supplier, Transactions, TransactionLine, PurchaseOrder, ReceivesProductsFrom, Salesperson, Shipment, Manager
+from .models import Customer, Products, BranchInventory, Supplier, Transactions, TransactionLine, PurchaseOrder, Shipment, Manager
 
 # View for Branch Inventory page
 def branch_inventory_view(request):
