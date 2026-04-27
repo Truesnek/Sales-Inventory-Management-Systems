@@ -18,8 +18,10 @@
     {% if transactions %}
     <table border="1">
         <tr>
-            <th>ID</th><th>Status</th><th>Total</th><th>Date</th>
-            <th>Customer</th><th>Salesperson</th>
+            <th>ID</th>
+            <th>Status</th>
+            <th>Total</th>
+            <th>Date</th>
         </tr>
         {% for t in transactions %}
         <tr>
@@ -27,8 +29,6 @@
             <td>{{ t.transaction_status }}</td>
             <td>{{ t.total_amount }}</td>
             <td>{{ t.transaction_date }}</td>
-            <td>{{ t.customer.customer_name }}</td>
-            <td>{{ t.sales.employee_number_id }}</td>
         </tr>
         {% endfor %}
     </table>
