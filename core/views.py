@@ -9,8 +9,7 @@ from django.db import transaction
 from django.db import connection
 
 import json
-from .models import Customer, Products, Branch, BranchInventory, Supplier, Transactions, TransactionLine, PurchaseOrder, ReceivesProductsFrom,Salesperson,Shipment
-from sales_inventory_management import urls
+from .models import Customer, Products, Branch, BranchInventory, Supplier, Transactions, TransactionLine, PurchaseOrder, ReceivesProductsFrom, Salesperson, Shipment, Manager
 
 # View for Branch Inventory page
 def branch_inventory_view(request):
@@ -103,7 +102,6 @@ def create_purchase_order_page(request):
         "purchase_orders": purchase_orders,
     })
 
-
 def generate_report_page(request):
     username = request.session.get("username")
     if not username:
@@ -126,6 +124,7 @@ def generate_report_page(request):
             JOIN Products p ON bi.product_id = p.product_id
             ORDER BY bi.branch_id, bi.product_id
         """)
+
         inventory = [
             {
                 "branch_id": row[0],
@@ -142,21 +141,17 @@ def generate_report_page(request):
                 t.transaction_id,
                 t.transaction_status,
                 t.total_amount,
-                t.transaction_date,
-                c.customer_name,
-                t.sales_id
+                t.transaction_date
             FROM Transactions t
-            LEFT JOIN Customer c ON t.customer_id = c.customer_id
             ORDER BY t.transaction_id DESC
         """)
+
         transactions = [
             {
                 "transaction_id": row[0],
                 "transaction_status": row[1],
                 "total_amount": row[2],
                 "transaction_date": row[3],
-                "customer_name": row[4],
-                "sales_id": row[5],
             }
             for row in cursor.fetchall()
         ]
@@ -177,8 +172,6 @@ def generate_report_page(request):
     }
 
     return render(request, "GenerateReport.html", context)
-
-
 def manage_customers(request):
     username = request.session.get("username")
     if not username:
@@ -193,7 +186,7 @@ def manage_transactions(request):
     if not username:
         return redirect("login")
 
-    transactions = Transactions.objects.select_related("customer", "sales").all()
+    transactions = Transactions.objects.all()
     return render(request, "ManageTransactions.html", {"transactions": transactions})
 
 
@@ -219,11 +212,11 @@ def view_products(request):
             "product_name": p.product_name,
             "product_description": p.product_description,
             "unit_price": str(p.unit_price),
+            "num_products": p.num_products,
         }
         for p in products
     ]
     return JsonResponse(data, safe=False)
-
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -436,12 +429,8 @@ def add_transaction(request):
     data = json.loads(request.body)
 
     with transaction.atomic():
-        customer = get_object_or_404(Customer, pk=data["customer_id"])
-        salesperson = get_object_or_404(Salesperson, pk=data["salesperson_id"])
 
         txn = Transactions.objects.create(
-            customer=customer,
-            sales=salesperson,
             transaction_status=data.get("transaction_status"),
             total_amount=data.get("total_amount"),
             transaction_date=data.get("transaction_date"),
@@ -556,10 +545,10 @@ def get_purchase_order(request, order_id):
     }
     return JsonResponse(po_data)
 
-def update_purchase(request):
+def update_purchase(request, order_id):
     po = PurchaseOrder.objects.select_related('transaction_id').get(pk=order_id)
     txn = po.transaction_id
-    po.transaction_status = "Completed"
+    po.order_status = "Completed"
     po.save()
     lines = []
     
@@ -571,10 +560,10 @@ def update_purchase(request):
     for line in lines:
         
         try:
-            product = Product.objects.get(product_id=line[0])
-            product.num_products += line[2]
+            product = Products.objects.get(product_id=line[0])
+            product.num_products = (product.num_products or 0) + line[2]
             product.save()
-        except Product.DoesNotExist:
+        except Products.DoesNotExist:
             print("Product not found, cannot update")
     return JsonResponse({"success": True, "message": "Purchase order updated"})
 
