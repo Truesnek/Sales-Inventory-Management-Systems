@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>View Transaction History</title>
+</head>
+<body>
+    <nav style="background:#333; padding:10px;">
+        <a href="{% url 'branch_inventory' %}" style="color:white; margin-right:15px;">View Branch Inventory</a>
+        <a href="{% url 'manage_customers' %}" style="color:white; margin-right:15px;">Manage Customers</a>
+        <a href="{% url 'record_purchase' %}" style="color:white; margin-right:15px;">Record Customer Purchase</a>
+        <a href="{% url 'transaction_history' %}" style="color:white; margin-right:15px;">View Transaction History</a>
+    </nav>
+    <hr>
+    <h2>View Transaction Detail</h2>
+    <button onclick="loadTransactions()">Refresh Transaction History</button><br><br>
+    <table border="1" id="transactionTable">
+        <thead>
+            <tr>
+                <th>Transaction ID</th>
+                <th>Transaction Date</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Discount</th>
+                <th>Total Amount</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        async function loadTransactions() {
+            const response = await fetch("/api/transactions/view/");
+            const tbody = document.querySelector("#transactionTable tbody");
+            tbody.innerHTML = "";
+            const transactions = await response.json();
+            transactions.forEach(transaction => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${transaction.transaction_id}</td>
+                    <td>${transaction.transaction_date || ""}</td>
+                    <td>${transaction.transaction_due_date || ""}</td>
+                    <td>${transaction.transaction_status || ""}</td>
+                    <td>${transaction.transaction_discount || ""}</td>
+                    <td>${transaction.total_amount || ""}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        loadTransactions();
+    </script>
+</body>
+</html>

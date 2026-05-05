@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Transactions</title>
+</head>
+<body>
+    <nav style="background:#333; padding:10px;">
+        <a href="{% url 'manage-products' %}" style="color:white;">Products</a>
+        <a href="{% url 'manage-inventory' %}" style="color:white;">Inventory</a>
+        <a href="{% url 'manage-suppliers' %}" style="color:white;">Suppliers</a>
+        <a href="{% url 'create-purchase-order' %}" style="color:white;">Orders</a>
+        <a href="{% url 'generate-reports' %}" style="color:white;">Reports</a>
+    </nav>
+    <hr>
+
+    <h2>Transactions</h2>
+
+    {% if transactions %}
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Status</th>
+            <th>Total</th>
+            <th>Date</th>
+        </tr>
+        {% for t in transactions %}
+        <tr>
+            <td>{{ t.transaction_id }}</td>
+            <td>{{ t.transaction_status }}</td>
+            <td>{{ t.total_amount }}</td>
+            <td>{{ t.transaction_date }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No transactions found.</p>
+    {% endif %}
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Products</title>
+</head>
+<body>
+    <nav style="background:#333; padding:10px;">
+        <a href="{% url 'manage-products' %}" style="color:white; margin-right:15px;">Manage Products</a>
+        <a href="{% url 'manage-inventory' %}" style="color:white; margin-right:15px;">Manage Branch Inventory</a>
+        <a href="{% url 'manage-suppliers' %}" style="color:white; margin-right:15px;">Manage Suppliers</a>
+        <a href="{% url 'create-purchase-order' %}" style="color:white; margin-right:15px;">Create Purchase Order</a>
+        <a href="{% url 'generate-reports' %}" style="color:white; margin-right:15px;">Generate Report</a>
+    </nav>
+    <hr>
+
+    <h2>Add Product</h2>
+    <form id="addProductForm">
+        <label>Product Name:</label><br>
+        <input type="text" id="add_product_name" required><br><br>
+
+        <label>Product Description:</label><br>
+        <textarea id="add_product_description"></textarea><br><br>
+
+        <label>Unit Price:</label><br>
+        <input type="number" id="add_unit_price" step="0.01" required><br><br>
+
+        <label>Number of Products:</label><br>
+        <input type="number" id="add_num_products"><br><br>
+
+        <button type="submit">Add Product</button>
+    </form>
+    <p id="addMessage"></p>
+
+    <hr>
+
+    <h2>Update Product</h2>
+    <form id="updateProductForm">
+        <label>Product ID:</label><br>
+        <input type="number" id="update_product_id" required><br><br>
+
+        <label>Product Name:</label><br>
+        <input type="text" id="update_product_name"><br><br>
+
+        <label>Product Description:</label><br>
+        <textarea id="update_product_description"></textarea><br><br>
+
+        <label>Unit Price:</label><br>
+        <input type="number" id="update_unit_price" step="0.01"><br><br>
+
+        <label>Number of Products:</label><br>
+        <input type="number" id="update_num_products"><br><br>
+
+        <button type="submit">Update Product</button>
+    </form>
+    <p id="updateMessage"></p>
+
+    <hr>
+
+    <h2>Delete Product</h2>
+    <form id="deleteProductForm">
+        <label>Product ID:</label><br>
+        <input type="number" id="delete_product_id" required><br><br>
+
+        <button type="submit">Delete Product</button>
+    </form>
+    <p id="deleteMessage"></p>
+
+    <hr>
+
+    <h2>View Product</h2>
+    <button onclick="loadProducts()">Refresh Products</button><br><br>
+
+    <table border="1" id="productsTable">
+        <thead>
+            <tr>
+                <th>Product ID</th>
+                <th>Product Name</th>
+                <th>Product Description</th>
+                <th>Unit Price</th>
+                <th>Number of Products</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        async function loadProducts() {
+            const response = await fetch("/api/products/view/");
+            const products = await response.json();
+
+            const tbody = document.querySelector("#productsTable tbody");
+            tbody.innerHTML = "";
+
+            products.forEach(product => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${product.product_id}</td>
+                    <td>${product.product_name || ""}</td>
+                    <td>${product.product_description || ""}</td>
+                    <td>${product.unit_price || ""}</td>
+                    <td>${product.num_products || ""}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        document.getElementById("addProductForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+
+            const data = {
+                product_name: document.getElementById("add_product_name").value,
+                product_description: document.getElementById("add_product_description").value,
+                unit_price: document.getElementById("add_unit_price").value,
+                num_products: document.getElementById("add_num_products").value
+            };
+
+            const response = await fetch("/api/products/add/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                document.getElementById("addMessage").innerText = "Product added successfully.";
+                document.getElementById("addProductForm").reset();
+                loadProducts();
+            } else {
+                document.getElementById("addMessage").innerText = "Failed to add product.";
+            }
+        });
+
+        document.getElementById("updateProductForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+
+            const productId = document.getElementById("update_product_id").value;
+
+            const data = {
+                product_name: document.getElementById("update_product_name").value,
+                product_description: document.getElementById("update_product_description").value,
+                unit_price: document.getElementById("update_unit_price").value,
+                num_products: document.getElementById("update_num_products").value
+            };
+
+            const response = await fetch(`/api/products/update/${productId}/`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                document.getElementById("updateMessage").innerText = "Product updated successfully.";
+                document.getElementById("updateProductForm").reset();
+                loadProducts();
+            } else {
+                document.getElementById("updateMessage").innerText = "Failed to update product.";
+            }
+        });
+
+        document.getElementById("deleteProductForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+
+            const productId = document.getElementById("delete_product_id").value;
+
+            const response = await fetch(`/api/products/delete/${productId}/`, {
+                method: "DELETE"
+            });
+
+            if (response.ok) {
+                document.getElementById("deleteMessage").innerText = "Product deleted successfully.";
+                document.getElementById("deleteProductForm").reset();
+                loadProducts();
+            } else {
+                document.getElementById("deleteMessage").innerText = "Failed to delete product.";
+            }
+        });
+
+        loadProducts();
+    </script>
+</body>
+</html>

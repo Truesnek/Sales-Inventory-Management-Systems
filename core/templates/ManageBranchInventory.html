@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Branch Inventory</title>
+</head>
+<body>
+    <nav style="background:#333; padding:10px;">
+        <a href="{% url 'manage-products' %}" style="color:white; margin-right:15px;">Manage Products</a>
+        <a href="{% url 'manage-inventory' %}" style="color:white; margin-right:15px;">Manage Branch Inventory</a>
+        <a href="{% url 'manage-suppliers' %}" style="color:white; margin-right:15px;">Manage Suppliers</a>
+        <a href="{% url 'create-purchase-order' %}" style="color:white; margin-right:15px;">Create Purchase Order</a>
+        <a href="{% url 'generate-reports' %}" style="color:white; margin-right:15px;">Generate Report</a>
+    </nav>
+    <hr>
+
+    <h2>View Product</h2>
+    <button onclick="loadProducts()">Refresh Products</button><br><br>
+
+    <table border="1" id="productsTable">
+        <thead>
+            <tr>
+                <th>Product ID</th>
+                <th>Product Name</th>
+                <th>Product Description</th>
+                <th>Unit Price</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <hr>
+
+    <h2>View Branch Inventory</h2>
+    <button onclick="loadInventory()">Refresh Inventory</button><br><br>
+
+    <table border="1" id="inventoryTable">
+        <thead>
+            <tr>
+                <th>Branch ID</th>
+                <th>Address</th>
+                <th>Product ID</th>
+                <th>Product Name</th>
+                <th>Quantity</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <hr>
+
+    <h2>Monitor Stock Levels</h2>
+    <button onclick="loadStockLevels()">Refresh Stock Levels</button><br><br>
+
+    <table border="1" id="stockTable">
+        <thead>
+            <tr>
+                <th>Product ID</th>
+                <th>Product Name</th>
+                <th>Total Quantity</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        async function loadProducts() {
+            const response = await fetch("/api/products/view/");
+            const products = await response.json();
+
+            const tbody = document.querySelector("#productsTable tbody");
+            tbody.innerHTML = "";
+
+            products.forEach(product => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${product.product_id}</td>
+                    <td>${product.product_name || ""}</td>
+                    <td>${product.product_description || ""}</td>
+                    <td>${product.unit_price || ""}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        async function loadInventory() {
+            const response = await fetch("/api/inventory/view/");
+            const inventory = await response.json();
+
+            const tbody = document.querySelector("#inventoryTable tbody");
+            tbody.innerHTML = "";
+
+            inventory.forEach(item => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${item.branch_id}</td>
+                    <td>${item.address || ""}</td>
+                    <td>${item.product_id}</td>
+                    <td>${item.product_name || ""}</td>
+                    <td>${item.quantity}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        async function loadStockLevels() {
+            const response = await fetch("/api/inventory/view/");
+            const inventory = await response.json();
+
+            const stockTotals = {};
+
+            inventory.forEach(item => {
+                if (!stockTotals[item.product_id]) {
+                    stockTotals[item.product_id] = {
+                        product_name: item.product_name,
+                        quantity: 0
+                    };
+                }
+
+                stockTotals[item.product_id].quantity += Number(item.quantity);
+            });
+
+            const tbody = document.querySelector("#stockTable tbody");
+            tbody.innerHTML = "";
+
+            Object.keys(stockTotals).forEach(productId => {
+                const item = stockTotals[productId];
+
+                let status = "In Stock";
+                if (item.quantity === 0) {
+                    status = "Out of Stock";
+                } else if (item.quantity < 10) {
+                    status = "Low Stock";
+                }
+
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${productId}</td>
+                    <td>${item.product_name || ""}</td>
+                    <td>${item.quantity}</td>
+                    <td>${status}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+    </script>
+</body>
+</html>
